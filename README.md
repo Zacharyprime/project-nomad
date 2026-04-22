@@ -113,6 +113,54 @@ By design, Project N.O.M.A.D. is intended to be open and available without hurdl
 **Will authentication be added in the future?** Maybe. It's not currently a priority, but if there's enough demand for it, we may consider building in an optional authentication layer in a future release to support uses cases where multiple users need access to the same instance but with different permission levels (e.g. family use with parental controls, classroom use with teacher/admin accounts, etc.). We have a suggestion for this on our public roadmap, so if this is something you'd like to see, please upvote it here: https://roadmap.projectnomad.us/posts/1/user-authentication-please-build-in-user-auth-with-admin-user-roles
 
 For now, we recommend using network-level controls to manage access if you're planning to expose your N.O.M.A.D. instance to other devices on a local network. N.O.M.A.D. is not designed to be exposed directly to the internet, and we strongly advise against doing so unless you really know what you're doing, have taken appropriate security measures, and understand the risks involved.
+### How to configure authentication with Caddy (network level authentication)
+It is possible to use a caddy configuration in order to prevent users from accessing certain pages, apps or ports. Here we will show how to configure the settings menu to require a username and password to access. It is recommended not to expose your system to the internet unless you know what you are doing. Please follow these steps at your own risk.
+
+First install caddy:
+```bash
+sudo apt update
+sudo apt install caddy
+```
+Caddy does not store your password as raw text, you must generate a hash for your password by running the following command:
+```bash
+caddy hash-password
+```
+The program will prompt you to create a password and will output the appropriate hash to put in the caddyfile.
+
+Then create the caddy configuration
+```
+sudo nano /etc/caddy/Caddyfile
+```
+
+Example Configuration File:
+```
+<domain>:<port> {
+
+    reverse_proxy localhost:8080
+
+    @protected path /settings/*
+    basicauth @protected {
+        <user> <hash>
+
+    }
+}
+
+```
+
+domain: This is the domain name of your server if you have one (leave blank or put public ip otherwise).
+
+port: This is the port you plan to port forward for access to nomad. 
+
+user: This is the username you want to login with
+
+hash: This is the hash of your password generated in the earlier step
+
+Note that this assumes project nomad is hosted on port 8080. Also, port 8080 (or whichever port you have nomad configured to) does not need to be port forwarded. The reverse proxy will automatically forward the connection.
+
+Once everything has been configured, restart the caddy service to apply changes:
+```
+sudo systemctl restart caddy
+```
 
 ## Contributing
 Contributions are welcome and appreciated! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to the project.
